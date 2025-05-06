@@ -5,6 +5,7 @@ import os, json
 import logging
 logging.basicConfig(level=logging.INFO)
 
+
 app = Flask(__name__)
 
 PROJECT_ID = os.environ.get("PROJECT_ID", "lanch-pipeline-v3")
