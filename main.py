@@ -7,8 +7,8 @@ logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
-PROJECT_ID = os.environ["PROJECT_ID"]
-TOPIC_ID = os.environ["TOPIC_ID"]
+PROJECT_ID = os.environ.get("PROJECT_ID")
+TOPIC_ID = os.environ.get("TOPIC_ID")
 
 publisher = pubsub_v1.PublisherClient()
 topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
