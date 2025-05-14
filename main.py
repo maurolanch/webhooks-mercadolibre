@@ -23,8 +23,10 @@ def webhook():
     
     logging.info(f"Received webhook: {json.dumps(data)}")
 
-    future = publisher.publish(topic_path, json.dumps(data).encode("utf-8"))
-    future.result()
+    try:
+        publisher.publish(topic_path, json.dumps(data).encode("utf-8"))
+    except Exception as e:
+        logging.error(f"Error al publicar en Pub/Sub: {e}")
 
     return {"status": "ok"}, 200
 
