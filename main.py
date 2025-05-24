@@ -17,33 +17,34 @@ payments_topic_path = publisher.topic_path(PROJECT_ID, PAYMENTS_TOPIC_ID)
 def publish_to_pubsub(topic_path, data):
     try:
         publisher.publish(topic_path, json.dumps(data).encode("utf-8"))
-        logging.info(f"Published message with ID {data.get('_id')} to Pub/Sub topic {topic_path}.")
+        logging.info(f"Publicado en Pub/Sub topic: {topic_path}")
     except Exception as e:
-        logging.error(f"Error publishing to Pub/Sub: {e}")
+        logging.error(f"Error al publicar en Pub/Sub: {e}")
 
-def process_webhook(data, topic_path):
+@app.route("/", methods=["POST"])
+def unified_webhook():
+    data = request.get_json()
+
     if not data:
-        logging.warning("No JSON received")
-        return {"error": "No JSON received"}, 400
+        logging.warning("No JSON recibido")
+        return {"error": "No JSON recibido"}, 400
 
+    topic = data.get("topic")
     attempts = data.get("attempts", 0)
+
     if attempts > 1:
-        logging.info(f"Webhook with ID {data.get('_id')} is a retry (attempts: {attempts}), skipping processing.")
+        logging.info(f"Retry detectado. ID: {data.get('_id')}, attempts: {attempts}")
         return {"status": "skipped", "reason": "retry attempt"}, 200
 
-    logging.info(f"Received webhook: {json.dumps(data)}")
-    publish_to_pubsub(topic_path, data)
+    if topic == "orders":
+        publish_to_pubsub(orders_topic_path, data)
+    elif topic == "payments":
+        publish_to_pubsub(payments_topic_path, data)
+    else:
+        logging.warning(f"Webhook desconocido: topic={topic}")
+        return {"status": "ignored", "reason": "unknown topic"}, 200
+
     return {"status": "ok"}, 200
-
-@app.route("/orders", methods=["POST"])
-def webhook_orders():
-    data = request.get_json()
-    return process_webhook(data, orders_topic_path)
-
-@app.route("/payments", methods=["POST"])
-def webhook_payments():
-    data = request.get_json()
-    return process_webhook(data, payments_topic_path)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
